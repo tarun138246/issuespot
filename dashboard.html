@@ -1,0 +1,1098 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IssueSpot - Dashboard</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="logo.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="logo.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="logo.png">
+    <meta name="theme-color" content="#2563eb">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <style>
+        /* Dashboard Styles */
+        :root {
+            --primary-color: #2563eb;
+            --secondary-color: #1e40af;
+            --accent-color: #60a5fa;
+            --text-color: #1f2937;
+            --light-bg: #f3f4f6;
+            --white: #ffffff;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --sidebar-width: 250px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background: var(--light-bg);
+            color: var(--text-color);
+            overflow-x: hidden;
+        }
+
+        .dashboard-container {
+            display: flex;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        /* Sidebar Styles */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: var(--white);
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            height: 100vh;
+            box-shadow: var(--shadow);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary-color);
+            margin-bottom: 2rem;
+        }
+
+        .nav-links {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            flex-grow: 1;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.75rem 1rem;
+            text-decoration: none;
+            color: var(--text-color);
+            border-radius: 0.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .nav-link:hover,
+        .nav-link.active {
+            background: var(--primary-color);
+            color: var(--white);
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            border-top: 1px solid var(--light-bg);
+        }
+
+        .user-profile img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .user-info h4 {
+            font-size: 0.9rem;
+            margin-bottom: 0.25rem;
+            word-break: break-word;
+        }
+
+        .user-info p {
+            font-size: 0.8rem;
+            color: #666;
+            word-break: break-word;
+        }
+
+        /* Main Content Styles */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            flex-grow: 1;
+            padding: 1.5rem;
+            transition: margin-left 0.3s ease;
+        }
+
+        .top-bar {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            background: var(--white);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            box-shadow: var(--shadow);
+        }
+
+        .menu-toggle {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-color);
+            z-index: 1001;
+        }
+
+        .search-bar {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--light-bg);
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            flex-grow: 1;
+        }
+
+        .search-bar input {
+            border: none;
+            background: none;
+            outline: none;
+            width: 100%;
+        }
+
+        .top-bar-actions {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .new-report-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: var(--primary-color);
+            color: var(--white);
+            border: none;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: background 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .new-report-btn:hover {
+            background: var(--secondary-color);
+        }
+
+        
+
+        /* Content Sections */
+        .content-section {
+            display: none;
+            background: var(--white);
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            box-shadow: var(--shadow);
+        }
+
+        .content-section.active {
+            display: block;
+        }
+
+        /* Reports Grid */
+        .reports-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .report-card {
+            background: var(--white);
+            border-radius: 0.5rem;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            transition: transform 0.3s ease;
+            cursor: pointer;
+        }
+
+        .report-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .report-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+
+        .report-content {
+            padding: 1rem;
+        }
+
+        .report-status {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 1rem;
+            font-size: 0.8rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .status-pending {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .status-in-progress {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .status-resolved {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        /* Map Styles */
+        #map {
+            height: 600px;
+            border-radius: 0.5rem;
+            margin-top: 1.5rem;
+        }
+
+        /* Issue Management Styles */
+        .filters {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .filters select,
+        .filters input {
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 0.5rem;
+            outline: none;
+            min-width: 150px;
+        }
+
+        .issues-table {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 700px;
+        }
+
+        th,
+        td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background: var(--light-bg);
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .modal-content {
+            background: var(--white);
+            padding: 2rem;
+            border-radius: 0.5rem;
+            max-width: 600px;
+            margin: 2rem auto;
+            position: relative;
+        }
+
+        .close {
+            position: absolute;
+            right: 1rem;
+            top: 1rem;
+            font-size: 1.5rem;
+            cursor: pointer;
+            z-index: 1;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 0.5rem;
+            outline: none;
+        }
+
+        .form-group textarea {
+            height: 100px;
+            resize: vertical;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 0.75rem;
+            background: var(--primary-color);
+            color: var(--white);
+            border: none;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .submit-btn:hover {
+            background: var(--secondary-color);
+        }
+
+        /* Overlay */
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .sidebar.active {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+
+            .menu-toggle {
+                display: block;
+            }
+
+            .modal-content {
+                margin: 1rem;
+                width: auto;
+            }
+
+            .top-bar {
+                flex-wrap: wrap;
+            }
+
+            .search-bar {
+                order: 2;
+                width: 100%;
+                margin-top: 1rem;
+            }
+
+            .reports-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .filters {
+                flex-direction: column;
+            }
+
+            .filters select,
+            .filters input {
+                width: 100%;
+            }
+
+            .overlay.active {
+                display: block;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .top-bar-actions {
+                flex-wrap: wrap;
+                gap: 0.5rem;
+            }
+
+            .new-report-btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .notifications {
+                margin-left: auto;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="overlay"></div>
+    <div class="dashboard-container">
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar">
+            <div class="logo">
+                <img src="logo.png" alt="IssueSpot Logo" style="width: 50px; height: 50px;">
+                <span>IssueSpot</span>
+            </div>
+            <div class="nav-links">
+                <a href="#" class="nav-link active" data-section="my-reports">
+                    <i class="fas fa-clipboard-list"></i>
+                    <span>My Reports</span>
+                </a>
+                <a href="#" class="nav-link" data-section="issue-map">
+                    <i class="fas fa-map-marked-alt"></i>
+                    <span>Issue Map</span>
+                </a>
+                <a href="#" class="nav-link" data-section="issue-management">
+                    <i class="fas fa-tasks"></i>
+                    <span>Issue Management</span>
+                </a>
+                <a href="#" class="nav-link" id="logout-link">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Logout</span>
+                </a>
+            </div>
+            <div class="user-profile">
+                <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?ixlib=rb-1.2.1&auto=format&fit=crop&w=100&q=80"
+                    alt="User Profile">
+                <div class="user-info">
+                    <h4 id="user-name">Loading...</h4>
+                    <p id="user-email">Loading...</p>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Top Bar -->
+            <div class="top-bar">
+                <button class="menu-toggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div class="search-bar">
+                    <i class="fas fa-search"></i>
+                    <input type="text" placeholder="Search reports...">
+                </div>
+                <div class="top-bar-actions">
+                    <button class="new-report-btn">
+                        <i class="fas fa-plus"></i>
+                        New Report
+                    </button>
+
+                </div>
+            </div>
+
+            <!-- Content Sections -->
+            <div class="content-section active" id="my-reports">
+                <h2>My Reports</h2>
+                <div class="reports-grid">
+                    <!-- Reports will be dynamically added here -->
+                </div>
+            </div>
+
+            <div class="content-section" id="issue-map">
+                <h2>Issue Map</h2>
+                <div id="map"></div>
+            </div>
+
+            <div class="content-section" id="issue-management">
+                <h2>Issue Management</h2>
+                <div class="filters">
+                    <select id="status-filter">
+                        <option value="">All Status</option>
+                        <option value="pending">Pending</option>
+                        <option value="in-progress">In Progress</option>
+                        <option value="resolved">Resolved</option>
+                    </select>
+                    <select id="priority-filter">
+                        <option value="">All Priority</option>
+                        <option value="high">High</option>
+                        <option value="medium">Medium</option>
+                        <option value="low">Low</option>
+                    </select>
+                    <input type="text" placeholder="Search by location" id="location-search">
+                </div>
+                <div class="issues-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Issue</th>
+                                <th>Location</th>
+                                <th>Priority</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="issues-tbody">
+                            <!-- Issues will be dynamically added here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- New Report Modal -->
+    <div class="modal" id="new-report-modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>New Report</h2>
+            <form id="new-report-form">
+                <div class="form-group">
+                    <label>Issue Type</label>
+                    <select name="issueType" required>
+                        <option value="">Select Issue Type</option>
+                        <option value="pothole">Pothole</option>
+                        <option value="streetlight">Broken Streetlight</option>
+                        <option value="garbage">Garbage</option>
+                        <option value="graffiti">Graffiti</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea name="description" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Location</label>
+                    <input type="text" name="location" required>
+                </div>
+                <div class="form-group">
+                    <label>Priority</label>
+                    <select name="priority" required>
+                        <option value="low">Low</option>
+                        <option value="medium">Medium</option>
+                        <option value="high">High</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Photo</label>
+                    <input type="file" name="photo" accept="image/*" required>
+                </div>
+                <button type="submit" class="submit-btn">Submit Report</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Issue Detail Modal -->
+    <div class="modal" id="issue-detail-modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <div class="issue-detail-content">
+                <!-- Issue details will be dynamically added here -->
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script>
+        // Initialize IndexedDB
+        let db;
+        const dbName = 'CivicWatchDB';
+        const dbVersion = 1;
+
+        // Check authentication
+        function checkAuth() {
+            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+            if (!currentUser) {
+                window.location.href = 'index.html';
+            } else {
+                updateUserProfile(currentUser);
+            }
+        }
+
+        // Update user profile in sidebar
+        function updateUserProfile(user) {
+            document.getElementById('user-name').textContent = user.name;
+            document.getElementById('user-email').textContent = user.email;
+        }
+
+        // Handle logout
+        document.getElementById('logout-link').addEventListener('click', (e) => {
+            e.preventDefault();
+            localStorage.removeItem('currentUser');
+            window.location.href = 'index.html';
+        });
+
+        const request = indexedDB.open(dbName, dbVersion);
+
+        request.onerror = (event) => {
+            console.error('Database error:', event.target.error);
+        };
+
+        request.onupgradeneeded = (event) => {
+            db = event.target.result;
+
+            // Create issues object store
+            if (!db.objectStoreNames.contains('issues')) {
+                const issuesStore = db.createObjectStore('issues', { keyPath: 'id', autoIncrement: true });
+                issuesStore.createIndex('status', 'status');
+                issuesStore.createIndex('priority', 'priority');
+                issuesStore.createIndex('location', 'location');
+                issuesStore.createIndex('userId', 'userId');
+            }
+        };
+
+        request.onsuccess = (event) => {
+            db = event.target.result;
+            checkAuth();
+            loadReports();
+            initializeMap();
+        };
+
+        // DOM Elements
+        const navLinks = document.querySelectorAll('.nav-link');
+        const contentSections = document.querySelectorAll('.content-section');
+        const menuToggle = document.querySelector('.menu-toggle');
+        const sidebar = document.querySelector('.sidebar');
+        const overlay = document.querySelector('.overlay');
+        const newReportBtn = document.querySelector('.new-report-btn');
+        const newReportModal = document.getElementById('new-report-modal');
+        const issueDetailModal = document.getElementById('issue-detail-modal');
+        const closeBtns = document.querySelectorAll('.close');
+        const newReportForm = document.getElementById('new-report-form');
+        const statusFilter = document.getElementById('status-filter');
+        const priorityFilter = document.getElementById('priority-filter');
+        const locationSearch = document.getElementById('location-search');
+
+        // Mobile menu toggle with overlay
+        function toggleSidebar() {
+            sidebar.classList.toggle('active');
+            overlay.classList.toggle('active');
+            document.body.style.overflow = sidebar.classList.contains('active') ? 'hidden' : '';
+        }
+
+        menuToggle.addEventListener('click', toggleSidebar);
+        overlay.addEventListener('click', toggleSidebar);
+
+        // Navigation
+        navLinks.forEach(link => {
+            if (link.id !== 'logout-link') {
+                link.addEventListener('click', () => {
+                    navLinks.forEach(l => l.classList.remove('active'));
+                    link.classList.add('active');
+
+                    const section = link.dataset.section;
+                    contentSections.forEach(s => s.classList.remove('active'));
+                    document.getElementById(section).classList.add('active');
+
+                    if (section === 'issue-map') {
+                        map.invalidateSize();
+                    }
+
+                    // Close sidebar on mobile after navigation
+                    if (window.innerWidth <= 768) {
+                        toggleSidebar();
+                    }
+                });
+            }
+        });
+
+        // Modal Handlers
+        function openModal(modal) {
+            modal.style.display = 'block';
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal(modal) {
+            modal.style.display = 'none';
+            document.body.style.overflow = '';
+        }
+
+        newReportBtn.addEventListener('click', () => openModal(newReportModal));
+
+        closeBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                closeModal(newReportModal);
+                closeModal(issueDetailModal);
+            });
+        });
+
+        window.addEventListener('click', (e) => {
+            if (e.target === newReportModal) closeModal(newReportModal);
+            if (e.target === issueDetailModal) closeModal(issueDetailModal);
+        });
+
+        // Form Submission
+        newReportForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const formData = new FormData(e.target);
+            const photoFile = formData.get('photo');
+            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+
+            try {
+                // Convert photo to base64
+                const base64Photo = await convertToBase64(photoFile);
+
+                const issue = {
+                    type: formData.get('issueType'),
+                    description: formData.get('description'),
+                    location: formData.get('location'),
+                    priority: formData.get('priority'),
+                    photo: base64Photo,
+                    status: 'pending',
+                    timestamp: new Date().toISOString(),
+                    userId: currentUser.id,
+                    comments: [],
+                    updates: [{
+                        status: 'pending',
+                        timestamp: new Date().toISOString(),
+                        message: 'Issue reported'
+                    }]
+                };
+
+                saveIssue(issue);
+                closeModal(newReportModal);
+                e.target.reset();
+            } catch (error) {
+                console.error('Error submitting report:', error);
+                alert('Error submitting report. Please try again.');
+            }
+        });
+
+        // Save Issue to IndexedDB
+        function saveIssue(issue) {
+            const transaction = db.transaction(['issues'], 'readwrite');
+            const store = transaction.objectStore('issues');
+
+            const request = store.add(issue);
+
+            request.onsuccess = () => {
+                loadReports();
+                updateMap();
+            };
+
+            request.onerror = () => {
+                console.error('Error saving issue:', request.error);
+                alert('Error saving issue. Please try again.');
+            };
+        }
+
+        // Load Reports
+        function loadReports() {
+            const transaction = db.transaction(['issues'], 'readonly');
+            const store = transaction.objectStore('issues');
+            const request = store.getAll();
+
+            request.onsuccess = () => {
+                const issues = request.result;
+                const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+                const userIssues = issues.filter(issue => issue.userId === currentUser.id);
+                
+                displayReports(userIssues);
+                displayIssuesTable(issues);
+            };
+        }
+
+        // Display Reports in Grid
+        function displayReports(issues) {
+            const reportsGrid = document.querySelector('.reports-grid');
+            reportsGrid.innerHTML = '';
+
+            if (issues.length === 0) {
+                reportsGrid.innerHTML = `
+                    <div class="no-reports" style="text-align: center; grid-column: 1/-1; padding: 2rem;">
+                        <i class="fas fa-clipboard-list" style="font-size: 3rem; color: #ccc; margin-bottom: 1rem;"></i>
+                        <p>No reports yet. Click "New Report" to create one!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            issues.forEach(issue => {
+                const card = document.createElement('div');
+                card.className = 'report-card';
+                card.innerHTML = `
+                    <img src="${issue.photo}" alt="${issue.type}" class="report-image">
+                    <div class="report-content">
+                        <span class="report-status status-${issue.status}">${issue.status}</span>
+                        <h3>${issue.type}</h3>
+                        <p>${issue.description.substring(0, 100)}${issue.description.length > 100 ? '...' : ''}</p>
+                        <p><i class="fas fa-map-marker-alt"></i> ${issue.location}</p>
+                        <p><i class="fas fa-clock"></i> ${new Date(issue.timestamp).toLocaleDateString()}</p>
+                    </div>
+                `;
+
+                card.addEventListener('click', () => showIssueDetail(issue));
+                reportsGrid.appendChild(card);
+            });
+        }
+
+        // Show Issue Detail
+        function showIssueDetail(issue) {
+            const modal = document.getElementById('issue-detail-modal');
+            const content = modal.querySelector('.issue-detail-content');
+
+            content.innerHTML = `
+                <h2>${issue.type}</h2>
+                <img src="${issue.photo}" alt="${issue.type}" style="max-width: 100%; border-radius: 0.5rem; margin: 1rem 0;">
+                <div class="issue-info">
+                    <p><strong>Status:</strong> <span class="report-status status-${issue.status}">${issue.status}</span></p>
+                    <p><strong>Priority:</strong> ${issue.priority}</p>
+                    <p><strong>Location:</strong> ${issue.location}</p>
+                    <p><strong>Description:</strong> ${issue.description}</p>
+                </div>
+                <div class="updates-section">
+                    <h3>Updates</h3>
+                    ${issue.updates.map(update => `
+                        <div class="update-item" style="margin-bottom: 1rem; padding: 0.5rem; background: #f9fafb; border-radius: 0.5rem;">
+                            <p><strong>${update.status}</strong> - ${new Date(update.timestamp).toLocaleString()}</p>
+                            <p>${update.message}</p>
+                        </div>
+                    `).join('')}
+                </div>
+                <div class="comments-section">
+                    <h3>Comments</h3>
+                    ${issue.comments.map(comment => `
+                        <div class="comment-item" style="margin-bottom: 1rem; padding: 0.5rem; background: #f9fafb; border-radius: 0.5rem;">
+                            <p><strong>${comment.user}</strong> - ${new Date(comment.timestamp).toLocaleString()}</p>
+                            <p>${comment.text}</p>
+                        </div>
+                    `).join('')}
+                    <form class="comment-form" style="margin-top: 1rem;">
+                        <textarea placeholder="Add a comment..." required style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 0.5rem; margin-bottom: 0.5rem;"></textarea>
+                        <button type="submit" class="submit-btn">Add Comment</button>
+                    </form>
+                </div>
+            `;
+
+            const commentForm = content.querySelector('.comment-form');
+            commentForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+                addComment(issue.id, {
+                    user: currentUser.name,
+                    text: e.target.querySelector('textarea').value,
+                    timestamp: new Date().toISOString()
+                });
+                closeModal(modal);
+            });
+
+            openModal(modal);
+        }
+
+        // Add Comment
+        function addComment(issueId, comment) {
+            const transaction = db.transaction(['issues'], 'readwrite');
+            const store = transaction.objectStore('issues');
+            const request = store.get(issueId);
+
+            request.onsuccess = () => {
+                const issue = request.result;
+                issue.comments.push(comment);
+                store.put(issue);
+                loadReports();
+            };
+        }
+
+        // Initialize Map
+        let map;
+        function initializeMap() {
+            map = L.map('map').setView([51.505, -0.09], 13);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+
+            // Get user's location
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        const { latitude, longitude } = position.coords;
+                        map.setView([latitude, longitude], 13);
+                        updateMap();
+                    },
+                    (error) => {
+                        console.error('Error getting location:', error);
+                        updateMap();
+                    }
+                );
+            } else {
+                updateMap();
+            }
+        }
+
+        // Update Map Markers
+        function updateMap() {
+            if (!map) return;
+
+            map.eachLayer((layer) => {
+                if (layer instanceof L.Marker) {
+                    map.removeLayer(layer);
+                }
+            });
+
+            const transaction = db.transaction(['issues'], 'readonly');
+            const store = transaction.objectStore('issues');
+            const request = store.getAll();
+
+            request.onsuccess = () => {
+                const issues = request.result;
+                issues.forEach(issue => {
+                    // For demo purposes, generate random coordinates near London
+                    const lat = 51.505 + (Math.random() - 0.5) * 0.1;
+                    const lng = -0.09 + (Math.random() - 0.5) * 0.1;
+
+                    const marker = L.marker([lat, lng]).addTo(map);
+                    marker.bindPopup(`
+                        <div style="min-width: 200px;">
+                            <h3 style="margin-bottom: 0.5rem;">${issue.type}</h3>
+                            <p style="margin-bottom: 0.5rem;">${issue.description.substring(0, 100)}${issue.description.length > 100 ? '...' : ''}</p>
+                            <p><strong>Status:</strong> <span class="report-status status-${issue.status}">${issue.status}</span></p>
+                            <button onclick="showIssueDetail(${JSON.stringify(issue).replace(/"/g, '&quot;')})" 
+                                    style="background: #2563eb; color: white; padding: 0.25rem 0.5rem; border: none; border-radius: 0.25rem; cursor: pointer; margin-top: 0.5rem;">
+                                View Details
+                            </button>
+                        </div>
+                    `);
+                });
+            };
+        }
+
+        // Display Issues Table
+        function displayIssuesTable(issues) {
+            const tbody = document.getElementById('issues-tbody');
+            tbody.innerHTML = '';
+
+            if (issues.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" style="text-align: center; padding: 2rem;">
+                            <i class="fas fa-clipboard-list" style="font-size: 2rem; color: #ccc; margin-bottom: 0.5rem;"></i>
+                            <p>No issues found</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            issues.forEach(issue => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>#${issue.id}</td>
+                    <td>${issue.type}</td>
+                    <td>${issue.location}</td>
+                    <td>${issue.priority}</td>
+                    <td><span class="report-status status-${issue.status}">${issue.status}</span></td>
+                    <td>
+                        <button onclick="showIssueDetail(${JSON.stringify(issue).replace(/"/g, '&quot;')})"
+                                style="background: #2563eb; color: white; padding: 0.25rem 0.5rem; border: none; border-radius: 0.25rem; cursor: pointer;">
+                            View Details
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // Filter Handlers
+        function applyFilters() {
+            const status = statusFilter.value;
+            const priority = priorityFilter.value;
+            const location = locationSearch.value.toLowerCase();
+
+            const transaction = db.transaction(['issues'], 'readonly');
+            const store = transaction.objectStore('issues');
+            const request = store.getAll();
+
+            request.onsuccess = () => {
+                let issues = request.result;
+
+                if (status) {
+                    issues = issues.filter(issue => issue.status === status);
+                }
+                if (priority) {
+                    issues = issues.filter(issue => issue.priority === priority);
+                }
+                if (location) {
+                    issues = issues.filter(issue => issue.location.toLowerCase().includes(location));
+                }
+
+                displayIssuesTable(issues);
+            };
+        }
+
+        statusFilter.addEventListener('change', applyFilters);
+        priorityFilter.addEventListener('change', applyFilters);
+        locationSearch.addEventListener('input', applyFilters);
+
+        // Search functionality
+        const searchInput = document.querySelector('.search-bar input');
+        searchInput.addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            
+            const transaction = db.transaction(['issues'], 'readonly');
+            const store = transaction.objectStore('issues');
+            const request = store.getAll();
+
+            request.onsuccess = () => {
+                const issues = request.result;
+                const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+                const filteredIssues = issues.filter(issue => 
+                    issue.userId === currentUser.id && 
+                    (issue.type.toLowerCase().includes(searchTerm) ||
+                     issue.description.toLowerCase().includes(searchTerm) ||
+                     issue.location.toLowerCase().includes(searchTerm))
+                );
+                displayReports(filteredIssues);
+            };
+        });
+
+        // Utility Functions
+        function convertToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = error => reject(error);
+            });
+        }
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            if (window.innerWidth > 768) {
+                sidebar.classList.remove('active');
+                overlay.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+        });
+
+        // Initialize the dashboard
+        checkAuth();
+    </script>
+</body>
+
+</html>
